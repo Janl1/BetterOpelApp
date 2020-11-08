@@ -7,6 +7,9 @@ public class Vars {
     public static final String PREF_CLIENT_ID = "client_id";
     public static final String PREF_CLIENT_SECRET = "client_secret";
 
+    public static final String PREF_AUTH_ACCESSTOKEN = "auth_accesstoken";
+    public static final String PREF_AUTH_EXPIRES = "auth_expires";
+
     public static final String CRYPT_KEYNAME_AUTH = "crypt_key_clientids";
 
     // Test

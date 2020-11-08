@@ -1,21 +1,43 @@
 package de.janl1.betteropelapp;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.View;
+import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.Base64;
+import java.util.Date;
+import java.util.regex.Pattern;
+
+import de.janl1.betteropelapp.retrofit.ApiClient;
+import de.janl1.betteropelapp.retrofit.TronityApi;
+import de.janl1.betteropelapp.retrofit.objects.Token;
+import de.janl1.betteropelapp.retrofit.objects.TokenRequestDTO;
+import de.janl1.betteropelapp.utils.Cryptography;
 import de.janl1.betteropelapp.utils.Vars;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
+
+    TronityApi apiInterface;
+    SharedPreferences prefs;
+    SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        boolean setupComplete = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean(Vars.PREF_SETUP_COMPLETE, false);
+        prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+
+        boolean setupComplete = prefs.getBoolean(Vars.PREF_SETUP_COMPLETE, false);
         if (!setupComplete) {
             Intent intent = new Intent(this,LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
@@ -24,6 +46,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_main);
+
+        apiInterface = ApiClient.getClient().create(TronityApi.class);
+
+        checkTokenExistanceAndExpiry();
     }
 
     public void editCredentials(View view)
@@ -32,5 +58,82 @@ public class MainActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
         startActivity(intent);
         this.finish();
+    }
+
+    private void checkTokenExistanceAndExpiry()
+    {
+        String accessToken = prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, "");
+        long expiresTimestamp = prefs.getLong(Vars.PREF_AUTH_EXPIRES, 0);
+
+        if (accessToken.equals("") || expiresTimestamp == 0) {
+            Toast.makeText(getBaseContext(), "Kein Token gefunden! Fordere neuen Token an!", Toast.LENGTH_SHORT).show();
+            requestToken();
+        }
+
+        long currentTimestamp = new Date().getTime() / 1000L;
+        if (currentTimestamp > expiresTimestamp) {
+            Toast.makeText(getBaseContext(), "Token abgelaufen! Fordere neuen Token an!", Toast.LENGTH_SHORT).show();
+            requestToken();
+        } else {
+            Toast.makeText(getBaseContext(), "Token gültig!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void requestToken()
+    {
+        String encryptedClientId = prefs.getString(Vars.PREF_CLIENT_ID, "");
+        String encryptedClientSecret = prefs.getString(Vars.PREF_CLIENT_SECRET, "");
+
+        try {
+            Cryptography c = new Cryptography(Vars.CRYPT_KEYNAME_AUTH);
+
+            TokenRequestDTO tokenRequestDTO = new TokenRequestDTO(c.decrypt(encryptedClientId), c.decrypt(encryptedClientSecret), "app");
+            Call<Token> call1 = apiInterface.auth(tokenRequestDTO);
+            call1.enqueue(new Callback<Token>() {
+                @Override
+                public void onResponse(Call<Token> call, Response<Token> response) {
+
+                    System.out.println("Request ist gelaufen!");
+
+                    if (response.isSuccessful()) {
+                        try {
+                            Token token = response.body();
+
+                            editor = prefs.edit();
+                            editor.putString(Vars.PREF_AUTH_ACCESSTOKEN, token.access_token);
+                            editor.putLong(Vars.PREF_AUTH_EXPIRES, new JSONObject(new String(Base64.getDecoder().decode(token.access_token.split(Pattern.quote("."))[1]))).getLong("exp"));
+                            editor.apply();
+                        } catch (JSONException e) {
+                            // TODO: handle error
+                            e.printStackTrace();
+                        }
+
+                    } else {
+                        // TODO: handle error
+                        switch (response.code())
+                        {
+                            case 500:
+                                // The server experienced an unexpected error.
+                                break;
+                            case 401:
+                                // The provided client_id or client_secret were incorrect.
+                                break;
+                            default:
+                                // Something else
+                                break;
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<Token> call, Throwable t) {
+                    // TODO: handle error
+                }
+            });
+
+        } catch (Exception e) {
+            // TODO: handle errors
+            e.printStackTrace();
+        }
     }
 }
