@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -33,6 +34,8 @@ import de.janl1.betteropelapp.retrofit.ApiClient;
 import de.janl1.betteropelapp.retrofit.TronityApi;
 import de.janl1.betteropelapp.retrofit.objects.Token;
 import de.janl1.betteropelapp.retrofit.objects.TokenRequestDTO;
+import de.janl1.betteropelapp.retrofit.objects.Vehicle;
+import de.janl1.betteropelapp.retrofit.objects.VehiclesResponseDTO;
 import de.janl1.betteropelapp.utils.Cryptography;
 import de.janl1.betteropelapp.utils.Vars;
 import retrofit2.Call;
@@ -68,7 +71,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
-
         mapView.getMapAsync(this);
     }
 
@@ -183,6 +185,36 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        // googleMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+
+        Call<VehiclesResponseDTO> call1 = apiInterface.getVehicles("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""));
+        call1.enqueue(new Callback<VehiclesResponseDTO>() {
+            @Override
+            public void onResponse(Call<VehiclesResponseDTO> call, Response<VehiclesResponseDTO> response) {
+
+                if (response.isSuccessful()) {
+
+                        VehiclesResponseDTO vehList = response.body();
+                        Vehicle vehicle = vehList.data.get(0);
+                        setTitle(vehicle.manufacture + " " + vehicle.model + " (" + vehicle.year + ")");
+
+
+
+
+                } else {
+                    // TODO: handle error
+                }
+            }
+
+            @Override
+            public void onFailure(Call<VehiclesResponseDTO> call, Throwable t) {
+                System.out.println("HÖÖÖÖÖÖ");
+            }
+        });
+
+
+        googleMap.addMarker(new MarkerOptions().position(new LatLng(51.468327, 7.0810843)).title("Auto"));
+
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(51.468327, 7.0810843), 15);
+        googleMap.animateCamera(cameraUpdate);
     }
 }

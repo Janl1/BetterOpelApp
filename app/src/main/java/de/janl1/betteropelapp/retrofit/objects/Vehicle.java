@@ -9,7 +9,7 @@ public class Vehicle {
     @SerializedName("id")
     public String id;
     @SerializedName("scopes")
-    public List<VehicleScope> scopes;
+    public List<String> scopes;
     @SerializedName("updatedAt")
     public String updatedAt;
     @SerializedName("createdAt")
@@ -22,12 +22,12 @@ public class Vehicle {
     public String manufacture;
     @SerializedName("model")
     public String model;
-    @SerializedName("deployment")
-    public String deployment;
     @SerializedName("year")
     public int year;
     @SerializedName("kWh")
     public int kWh;
+    @SerializedName("deployment")
+    public String deployment;
     @SerializedName("timeStartSleep")
     public int timeStartSleep;
     @SerializedName("timeWaitSleep")
@@ -40,4 +40,8 @@ public class Vehicle {
     public boolean fixed;
     @SerializedName("wakeUp")
     public boolean wakeUp;
+    @SerializedName("fixedTime")
+    public int fixedTime;
+    @SerializedName("wakeUpTime")
+    public int wakeUpTime;
 }

@@ -7,7 +7,13 @@ import java.util.List;
 public class VehiclesResponseDTO {
 
     @SerializedName("data")
-    List<Vehicle> data;
+    public List<Vehicle> data;
     @SerializedName("count")
-    int count;
+    public int count;
+    @SerializedName("total")
+    public int total;
+    @SerializedName("page")
+    public int page;
+    @SerializedName("pageCount")
+    public int pageCount;
 }
