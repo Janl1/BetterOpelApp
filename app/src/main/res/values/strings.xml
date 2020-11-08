@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">BetterOpelApp</string>
+
+
+    <string name="login_helptext">Diese App nutzt den Dienst Tronity.io als Schnittstelle zu den einzelnen Autoherstellern.\n\n
+        Tronity aggregiert auf seiner Website die Fahrzeugdaten, welche von den Schnittstellen der einzelnen Fahrzeuge übermittelt werden und arbeitet diese Daten zu einem einheitlichen Datensatz auf.\n\n\n
+        Um diese App zu verwenden, bedarf es einem Konto bei Tronity.io und dein Fahrzeug muss von Tronity unterstützt und dort registiert sein.\n\n
+        Zudem muss der Tronity.io Account mit platform.tronity.io verknüpft werden. Im Anschluss benötigst du die \'Client Id\' und das \'Client Secret\' aus dem Tronity Platform Dashboard.</string>
+
+    <string name="login_header">Login mit</string>
+    <string name="login_logo_description">Tronity Logo</string>
+    <string name="login_link_tronity">Zu Tronity</string>
+    <string name="login_link_tronityplatform">Zu Tronity Platform</string>
+    <string name="login_api_keys">Client ID / Client Secret</string>
+    <string name="login_api_clientID">Client ID einfügen</string>
+    <string name="login_api_clientSecret">Client Secret einfügen</string>
+    <string name="login_btn_save">Speichern und Anmelden</string>
 </resources>
