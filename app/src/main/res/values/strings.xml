@@ -15,4 +15,6 @@
     <string name="login_api_clientID">Client ID einfügen</string>
     <string name="login_api_clientSecret">Client Secret einfügen</string>
     <string name="login_btn_save">Speichern und Anmelden</string>
+
+    <string name="maps_apikey">AIzaSyAivP7Scs13aoSBnlLnGe5ChVFrPtvmz8I</string>
 </resources>
