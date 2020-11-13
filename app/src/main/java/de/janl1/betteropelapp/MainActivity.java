@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         apiInterface = ApiClient.getClient().create(TronityApi.class);
 
-        checkTokenExistanceAndExpiry();
+        // checkTokenExistanceAndExpiry();
 
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
@@ -106,82 +106,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         this.finish();
     }
 
-    private void checkTokenExistanceAndExpiry()
-    {
-        String accessToken = prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, "");
-        long expiresTimestamp = prefs.getLong(Vars.PREF_AUTH_EXPIRES, 0);
 
-        if (accessToken.equals("") || expiresTimestamp == 0) {
-            Toast.makeText(getBaseContext(), "Kein Token gefunden! Fordere neuen Token an!", Toast.LENGTH_SHORT).show();
-            requestToken();
-        }
-
-        long currentTimestamp = new Date().getTime() / 1000L;
-        if (currentTimestamp > expiresTimestamp) {
-            Toast.makeText(getBaseContext(), "Token abgelaufen! Fordere neuen Token an!", Toast.LENGTH_SHORT).show();
-            requestToken();
-        } else {
-            Toast.makeText(getBaseContext(), "Token gültig!", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void requestToken()
-    {
-        String encryptedClientId = prefs.getString(Vars.PREF_CLIENT_ID, "");
-        String encryptedClientSecret = prefs.getString(Vars.PREF_CLIENT_SECRET, "");
-
-        try {
-            Cryptography c = new Cryptography(Vars.CRYPT_KEYNAME_AUTH);
-
-            TokenRequestDTO tokenRequestDTO = new TokenRequestDTO(c.decrypt(encryptedClientId), c.decrypt(encryptedClientSecret), "app");
-            Call<Token> call1 = apiInterface.auth(tokenRequestDTO);
-            call1.enqueue(new Callback<Token>() {
-                @Override
-                public void onResponse(Call<Token> call, Response<Token> response) {
-
-                    System.out.println("Request ist gelaufen!");
-
-                    if (response.isSuccessful()) {
-                        try {
-                            Token token = response.body();
-
-                            editor = prefs.edit();
-                            editor.putString(Vars.PREF_AUTH_ACCESSTOKEN, token.access_token);
-                            editor.putLong(Vars.PREF_AUTH_EXPIRES, new JSONObject(new String(Base64.getDecoder().decode(token.access_token.split(Pattern.quote("."))[1]))).getLong("exp"));
-                            editor.apply();
-                        } catch (JSONException e) {
-                            // TODO: handle error
-                            e.printStackTrace();
-                        }
-
-                    } else {
-                        // TODO: handle error
-                        switch (response.code())
-                        {
-                            case 500:
-                                // The server experienced an unexpected error.
-                                break;
-                            case 401:
-                                // The provided client_id or client_secret were incorrect.
-                                break;
-                            default:
-                                // Something else
-                                break;
-                        }
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<Token> call, Throwable t) {
-                    // TODO: handle error
-                }
-            });
-
-        } catch (Exception e) {
-            // TODO: handle errors
-            e.printStackTrace();
-        }
-    }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
