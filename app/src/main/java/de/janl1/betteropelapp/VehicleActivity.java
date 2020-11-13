@@ -32,6 +32,7 @@ import de.janl1.betteropelapp.retrofit.objects.Vehicle;
 import de.janl1.betteropelapp.retrofit.objects.VehiclesResponseDTO;
 import de.janl1.betteropelapp.ui.main.SectionsPagerAdapter;
 import de.janl1.betteropelapp.utils.Cryptography;
+import de.janl1.betteropelapp.utils.Dialog;
 import de.janl1.betteropelapp.utils.Vars;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -67,16 +68,14 @@ public class VehicleActivity extends AppCompatActivity {
                     viewPager.setAdapter(sectionsPagerAdapter);
                     TabLayout tabs = findViewById(R.id.tabs);
                     tabs.setupWithViewPager(viewPager);
-
-
                 } else {
-                    // TODO: handle error
+                    Dialog.showErrorMessage(VehicleActivity.this, "Laden der Fahrzeugliste", response.code() + " " + response.message()).show();
                 }
             }
 
             @Override
             public void onFailure(Call<VehiclesResponseDTO> call, Throwable t) {
-                // TODO: handle error
+                Dialog.showErrorMessage(VehicleActivity.this, "Laden der Fahrzeugliste", t.getMessage()).show();
             }
         });
 
@@ -137,7 +136,7 @@ public class VehicleActivity extends AppCompatActivity {
                             editor.putLong(Vars.PREF_AUTH_EXPIRES, new JSONObject(new String(Base64.getDecoder().decode(token.access_token.split(Pattern.quote("."))[1]))).getLong("exp"));
                             editor.apply();
                         } catch (JSONException e) {
-                            // TODO: handle error
+                            Dialog.showErrorMessage(VehicleActivity.this, "Parsen des Tokens", e.getMessage()).show();
                             e.printStackTrace();
                         }
 
@@ -147,12 +146,15 @@ public class VehicleActivity extends AppCompatActivity {
                         {
                             case 500:
                                 // The server experienced an unexpected error.
+                                Dialog.showErrorMessage(VehicleActivity.this, "Authentifizierung", "Der Server hat einen Fehler zurückgemeldet.").show();
                                 break;
                             case 401:
                                 // The provided client_id or client_secret were incorrect.
+                                Dialog.showErrorMessage(VehicleActivity.this, "Authentifizierung", "Die Client-ID und/oder das Client-Secret sind nicht korrekt!").show();
                                 break;
                             default:
                                 // Something else
+                                Dialog.showErrorMessage(VehicleActivity.this, "Authentifizierung", "Der Server hat einen unbekannten Fehler zurückgemeldet.").show();
                                 break;
                         }
                     }
@@ -160,12 +162,13 @@ public class VehicleActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(Call<Token> call, Throwable t) {
-                    // TODO: handle error
+                    Dialog.showErrorMessage(VehicleActivity.this, "Authentifizierung", t.getMessage()).show();
                 }
             });
 
         } catch (Exception e) {
             // TODO: handle errors
+            Dialog.showErrorMessage(VehicleActivity.this, "Allgemeiner Anwendungsfehler", e.getMessage()).show();
             e.printStackTrace();
         }
     }

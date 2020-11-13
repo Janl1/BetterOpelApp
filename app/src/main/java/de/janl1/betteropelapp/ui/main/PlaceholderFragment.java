@@ -38,6 +38,7 @@ import de.janl1.betteropelapp.retrofit.objects.Location;
 import de.janl1.betteropelapp.retrofit.objects.Odometer;
 import de.janl1.betteropelapp.retrofit.objects.Vehicle;
 import de.janl1.betteropelapp.retrofit.objects.VehiclesResponseDTO;
+import de.janl1.betteropelapp.utils.Dialog;
 import de.janl1.betteropelapp.utils.Vars;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -90,7 +91,6 @@ public class PlaceholderFragment extends Fragment implements OnMapReadyCallback 
                 TronityApi apiInterface = ApiClient.getClient().create(TronityApi.class);
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
 
-
                 // Load Battery information
                 Call<Battery> call1 = apiInterface.getBattery("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
                 call1.enqueue(new Callback<Battery>() {
@@ -98,21 +98,19 @@ public class PlaceholderFragment extends Fragment implements OnMapReadyCallback 
                     public void onResponse(Call<Battery> call, Response<Battery> response) {
 
                         if (response.isSuccessful()) {
-
                             TextView tfBatteryValue = (TextView) root.findViewById(R.id.textAkkuValue);
                             TextView tfDistanceValue = (TextView) root.findViewById(R.id.textDistanceValue);
 
                             tfBatteryValue.setText(response.body().level + " %");
                             tfDistanceValue.setText(response.body().range + " km");
-
                         } else {
-                            // TODO: handle error
+                            Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", response.code() + " " + response.message()).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<Battery> call, Throwable t) {
-                        // TODO: handle error
+                        Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", t.getMessage()).show();
                     }
                 });
 
@@ -123,19 +121,16 @@ public class PlaceholderFragment extends Fragment implements OnMapReadyCallback 
                     public void onResponse(Call<Odometer> call, Response<Odometer> response) {
 
                         if (response.isSuccessful()) {
-
-                            TextView tfTotalDistanceValue = (TextView) root.findViewById(R.id.textTotalDistanceValue);
-
+                            TextView tfTotalDistanceValue = root.findViewById(R.id.textTotalDistanceValue);
                             tfTotalDistanceValue.setText(response.body().odometer + " km");
-
                         } else {
-                            // TODO: handle error
+                            Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden des Tachostandes", response.code() + " " + response.message()).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<Odometer> call, Throwable t) {
-                        // TODO: handle error
+                        Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden des Tachostandes", t.getMessage()).show();
                     }
                 });
             }
