@@ -1,6 +1,8 @@
 package de.janl1.betteropelapp.retrofit;
 
 import de.janl1.betteropelapp.retrofit.objects.Battery;
+import de.janl1.betteropelapp.retrofit.objects.Bulk;
+import de.janl1.betteropelapp.retrofit.objects.Charge;
 import de.janl1.betteropelapp.retrofit.objects.Location;
 import de.janl1.betteropelapp.retrofit.objects.Odometer;
 import de.janl1.betteropelapp.retrofit.objects.Token;
@@ -29,4 +31,10 @@ public interface TronityApi {
 
     @GET("/v1/vehicles/{vehicleid}/odometer")
     Call<Odometer> getOdometer(@Header("Authorization") String token, @Path("vehicleid") String vehicleId);
+
+    @GET("/v1/vehicles/{vehicleid}/charge")
+    Call<Charge> getChargingSate(@Header("Authorization") String token, @Path("vehicleid") String vehicleId);
+
+    @GET("/v1/vehicles/{vehicleid}/bulk")
+    Call<Bulk> getBulkInformation(@Header("Authorization") String token, @Path("vehicleid") String vehicleId);
 }

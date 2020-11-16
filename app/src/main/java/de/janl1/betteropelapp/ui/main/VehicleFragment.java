@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
@@ -13,11 +14,12 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.viewpager.widget.ViewPager;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -26,7 +28,6 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.material.tabs.TabLayout;
 
 import java.io.Serializable;
 
@@ -34,10 +35,11 @@ import de.janl1.betteropelapp.R;
 import de.janl1.betteropelapp.retrofit.ApiClient;
 import de.janl1.betteropelapp.retrofit.TronityApi;
 import de.janl1.betteropelapp.retrofit.objects.Battery;
+import de.janl1.betteropelapp.retrofit.objects.Bulk;
+import de.janl1.betteropelapp.retrofit.objects.Charge;
 import de.janl1.betteropelapp.retrofit.objects.Location;
 import de.janl1.betteropelapp.retrofit.objects.Odometer;
 import de.janl1.betteropelapp.retrofit.objects.Vehicle;
-import de.janl1.betteropelapp.retrofit.objects.VehiclesResponseDTO;
 import de.janl1.betteropelapp.utils.Dialog;
 import de.janl1.betteropelapp.utils.Vars;
 import retrofit2.Call;
@@ -47,7 +49,7 @@ import retrofit2.Response;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class PlaceholderFragment extends Fragment implements OnMapReadyCallback {
+public class VehicleFragment extends Fragment implements OnMapReadyCallback {
 
     private static final String ARG_VEHICLE_OBJECT = "vehicle_object";
     private static final int PERMISSION_REQUEST_CODE = 1325586531;
@@ -57,8 +59,20 @@ public class PlaceholderFragment extends Fragment implements OnMapReadyCallback 
     MapView mapView;
     GoogleMap googleMap;
 
-    public static PlaceholderFragment newInstance(int index, Vehicle veh) {
-        PlaceholderFragment fragment = new PlaceholderFragment();
+    SwipeRefreshLayout swipeRefreshLayout;
+
+    TextView tfBatteryValue;
+    TextView tfDistanceValue;
+    TextView tfTotalDistanceValue;
+    CardView cardViewPercentage;
+
+    TronityApi apiInterface;
+    SharedPreferences prefs;
+
+    boolean googleMapIsReady = false;
+
+    public static VehicleFragment newInstance(int index, Vehicle veh) {
+        VehicleFragment fragment = new VehicleFragment();
         Bundle bundle = new Bundle();
         bundle.putSerializable(ARG_VEHICLE_OBJECT, (Serializable) veh);
         fragment.setArguments(bundle);
@@ -83,62 +97,34 @@ public class PlaceholderFragment extends Fragment implements OnMapReadyCallback 
             Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_vehicle, container, false);
 
+        tfBatteryValue = root.findViewById(R.id.textAkkuValue);
+        tfDistanceValue = root.findViewById(R.id.textDistanceValue);
+        tfTotalDistanceValue = root.findViewById(R.id.textTotalDistanceValue);
+        cardViewPercentage = root.findViewById(R.id.cardViewPercentage);
+        swipeRefreshLayout = root.findViewById(R.id.swiperefresh);
+
+        apiInterface = ApiClient.getClient().create(TronityApi.class);
+        prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
+
         pageViewModel.getmVehicle().observe(getActivity(), new Observer<Vehicle>() {
             @Override
             public void onChanged(@Nullable Vehicle veh) {
-
-                // Load vehicle specific data and update UI
-                TronityApi apiInterface = ApiClient.getClient().create(TronityApi.class);
-                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
-
-                // Load Battery information
-                Call<Battery> call1 = apiInterface.getBattery("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
-                call1.enqueue(new Callback<Battery>() {
-                    @Override
-                    public void onResponse(Call<Battery> call, Response<Battery> response) {
-
-                        if (response.isSuccessful()) {
-                            TextView tfBatteryValue = (TextView) root.findViewById(R.id.textAkkuValue);
-                            TextView tfDistanceValue = (TextView) root.findViewById(R.id.textDistanceValue);
-
-                            tfBatteryValue.setText(response.body().level + " %");
-                            tfDistanceValue.setText(response.body().range + " km");
-                        } else {
-                            Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", response.code() + " " + response.message()).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<Battery> call, Throwable t) {
-                        Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", t.getMessage()).show();
-                    }
-                });
-
-                // Load Battery information
-                Call<Odometer> call2 = apiInterface.getOdometer("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
-                call2.enqueue(new Callback<Odometer>() {
-                    @Override
-                    public void onResponse(Call<Odometer> call, Response<Odometer> response) {
-
-                        if (response.isSuccessful()) {
-                            TextView tfTotalDistanceValue = root.findViewById(R.id.textTotalDistanceValue);
-                            tfTotalDistanceValue.setText(response.body().odometer + " km");
-                        } else {
-                            Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden des Tachostandes", response.code() + " " + response.message()).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<Odometer> call, Throwable t) {
-                        Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden des Tachostandes", t.getMessage()).show();
-                    }
-                });
+                loadBulkData(swipeRefreshLayout);
             }
         });
 
         mapView = (MapView) root.findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+
+
+
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                loadBulkData(swipeRefreshLayout);
+            }
+        });
 
         return root;
     }
@@ -185,6 +171,8 @@ public class PlaceholderFragment extends Fragment implements OnMapReadyCallback 
     @Override
     public void onMapReady(GoogleMap googleMap) {
 
+        googleMapIsReady = true;
+
         if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Display a helptext before requesting permission!
             getActivity().requestPermissions(new String[] { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION }, PERMISSION_REQUEST_CODE);
@@ -192,9 +180,61 @@ public class PlaceholderFragment extends Fragment implements OnMapReadyCallback 
             googleMap.setMyLocationEnabled(true);
         }
 
+        this.googleMap = googleMap;
 
-        TronityApi apiInterface = ApiClient.getClient().create(TronityApi.class);
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
+        loadMapData();
+    }
+
+    private void loadBulkData(SwipeRefreshLayout swipeRefreshLayout)
+    {
+        swipeRefreshLayout.setRefreshing(true);
+        Call<Bulk> call1 = apiInterface.getBulkInformation("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
+        call1.enqueue(new Callback<Bulk>() {
+            @Override
+            public void onResponse(Call<Bulk> call, Response<Bulk> response) {
+
+                Bulk vehicleInformation = response.body();
+
+                if (response.isSuccessful()) {
+                    tfBatteryValue.setText(vehicleInformation.level + " %");
+                    tfDistanceValue.setText(vehicleInformation.range + " km");
+                    tfTotalDistanceValue.setText(vehicleInformation.odometer + " km");
+
+                    if (vehicleInformation.charging.equals("Charging"))  {
+                        cardViewPercentage.setCardBackgroundColor(getResources().getColor(R.color.batteryStateCharging));
+                    }
+
+                    if (googleMapIsReady) {
+                        try {
+                            googleMap.clear();
+                            googleMap.addMarker(new MarkerOptions().position(new LatLng(vehicleInformation.latitude, vehicleInformation.longitude)).title("Auto"));
+                            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(vehicleInformation.latitude, vehicleInformation.longitude), 15);
+                            googleMap.animateCamera(cameraUpdate);
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            // TODO:: handle error
+                        }
+                    }
+
+                    swipeRefreshLayout.setRefreshing(false);
+
+                } else {
+                    Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", response.code() + " " + response.message()).show();
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Bulk> call, Throwable t) {
+                Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", t.getMessage()).show();
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
+    }
+
+    private  void loadMapData()
+    {
         Call<Location> call1 = apiInterface.getLocation("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
         call1.enqueue(new Callback<Location>() {
             @Override
@@ -207,15 +247,14 @@ public class PlaceholderFragment extends Fragment implements OnMapReadyCallback 
                     googleMap.animateCamera(cameraUpdate);
 
                 } else {
-                    // TODO: handle error
+                    Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeugposition", response.code() + " " + response.message()).show();
                 }
             }
 
             @Override
             public void onFailure(Call<Location> call, Throwable t) {
-                System.out.println("HÖÖÖÖÖÖ");
+                Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeugposition", t.getMessage()).show();
             }
         });
-
     }
 }

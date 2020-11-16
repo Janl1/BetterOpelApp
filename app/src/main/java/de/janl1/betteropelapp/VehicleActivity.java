@@ -98,14 +98,12 @@ public class VehicleActivity extends AppCompatActivity {
         if (accessToken.equals("") || expiresTimestamp == 0) {
             Toast.makeText(getBaseContext(), "Kein Token gefunden! Fordere neuen Token an!", Toast.LENGTH_SHORT).show();
             requestToken();
-            restartActivity();
         }
 
         long currentTimestamp = new Date().getTime() / 1000L;
         if (currentTimestamp > expiresTimestamp) {
             Toast.makeText(getBaseContext(), "Token abgelaufen! Fordere neuen Token an!", Toast.LENGTH_SHORT).show();
             requestToken();
-            restartActivity();
         } else {
             Toast.makeText(getBaseContext(), "Token gültig!", Toast.LENGTH_SHORT).show();
         }
@@ -135,6 +133,9 @@ public class VehicleActivity extends AppCompatActivity {
                             editor.putString(Vars.PREF_AUTH_ACCESSTOKEN, token.access_token);
                             editor.putLong(Vars.PREF_AUTH_EXPIRES, new JSONObject(new String(Base64.getDecoder().decode(token.access_token.split(Pattern.quote("."))[1]))).getLong("exp"));
                             editor.apply();
+
+                            restartActivity();
+
                         } catch (JSONException e) {
                             Dialog.showErrorMessage(VehicleActivity.this, "Parsen des Tokens", e.getMessage()).show();
                             e.printStackTrace();
