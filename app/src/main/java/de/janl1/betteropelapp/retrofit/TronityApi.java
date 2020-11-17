@@ -3,6 +3,7 @@ package de.janl1.betteropelapp.retrofit;
 import de.janl1.betteropelapp.retrofit.objects.Battery;
 import de.janl1.betteropelapp.retrofit.objects.Bulk;
 import de.janl1.betteropelapp.retrofit.objects.Charge;
+import de.janl1.betteropelapp.retrofit.objects.Consumption;
 import de.janl1.betteropelapp.retrofit.objects.Location;
 import de.janl1.betteropelapp.retrofit.objects.Odometer;
 import de.janl1.betteropelapp.retrofit.objects.Token;
@@ -37,4 +38,7 @@ public interface TronityApi {
 
     @GET("/v1/vehicles/{vehicleid}/bulk")
     Call<Bulk> getBulkInformation(@Header("Authorization") String token, @Path("vehicleid") String vehicleId);
+
+    @GET("/v1/vehicles/{vehicleid}/trips/{year}/{month}/avg")
+    Call<Consumption> getAvgConsumption(@Header("Authorization") String token, @Path("vehicleid") String vehicleId, @Path("year") String year, @Path("month") String month);
 }

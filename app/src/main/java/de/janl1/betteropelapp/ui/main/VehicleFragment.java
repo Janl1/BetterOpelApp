@@ -4,7 +4,6 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
@@ -30,15 +29,15 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.Serializable;
+import java.text.MessageFormat;
+import java.util.Calendar;
 
 import de.janl1.betteropelapp.R;
 import de.janl1.betteropelapp.retrofit.ApiClient;
 import de.janl1.betteropelapp.retrofit.TronityApi;
-import de.janl1.betteropelapp.retrofit.objects.Battery;
 import de.janl1.betteropelapp.retrofit.objects.Bulk;
-import de.janl1.betteropelapp.retrofit.objects.Charge;
+import de.janl1.betteropelapp.retrofit.objects.Consumption;
 import de.janl1.betteropelapp.retrofit.objects.Location;
-import de.janl1.betteropelapp.retrofit.objects.Odometer;
 import de.janl1.betteropelapp.retrofit.objects.Vehicle;
 import de.janl1.betteropelapp.utils.Dialog;
 import de.janl1.betteropelapp.utils.Vars;
@@ -61,9 +60,10 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
 
     SwipeRefreshLayout swipeRefreshLayout;
 
-    TextView tfBatteryValue;
-    TextView tfDistanceValue;
-    TextView tfTotalDistanceValue;
+    TextView tvBatteryValue;
+    TextView tvDistanceValue;
+    TextView tvTotalDistanceValue;
+    TextView tvConsumption;
     CardView cardViewPercentage;
 
     TronityApi apiInterface;
@@ -71,7 +71,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
 
     boolean googleMapIsReady = false;
 
-    public static VehicleFragment newInstance(int index, Vehicle veh) {
+    public static VehicleFragment newInstance(Vehicle veh) {
         VehicleFragment fragment = new VehicleFragment();
         Bundle bundle = new Bundle();
         bundle.putSerializable(ARG_VEHICLE_OBJECT, (Serializable) veh);
@@ -97,11 +97,12 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
             Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_vehicle, container, false);
 
-        tfBatteryValue = root.findViewById(R.id.textAkkuValue);
-        tfDistanceValue = root.findViewById(R.id.textDistanceValue);
-        tfTotalDistanceValue = root.findViewById(R.id.textTotalDistanceValue);
+        tvBatteryValue = root.findViewById(R.id.textAkkuValue);
+        tvDistanceValue = root.findViewById(R.id.textDistanceValue);
+        tvTotalDistanceValue = root.findViewById(R.id.textTotalDistanceValue);
         cardViewPercentage = root.findViewById(R.id.cardViewPercentage);
         swipeRefreshLayout = root.findViewById(R.id.swiperefresh);
+        tvConsumption = root.findViewById(R.id.textConsumptionValue);
 
         apiInterface = ApiClient.getClient().create(TronityApi.class);
         prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
@@ -158,19 +159,15 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        switch (requestCode) {
-            case PERMISSION_REQUEST_CODE:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    googleMap.setMyLocationEnabled(true);
-                }  else {
-                }
-                return;
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                googleMap.setMyLocationEnabled(true);
+            }
         }
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-
         googleMapIsReady = true;
 
         if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -188,17 +185,17 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
     private void loadBulkData(SwipeRefreshLayout swipeRefreshLayout)
     {
         swipeRefreshLayout.setRefreshing(true);
-        Call<Bulk> call1 = apiInterface.getBulkInformation("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
-        call1.enqueue(new Callback<Bulk>() {
+        Call<Bulk> bulkCall = apiInterface.getBulkInformation("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
+        bulkCall.enqueue(new Callback<Bulk>() {
             @Override
             public void onResponse(Call<Bulk> call, Response<Bulk> response) {
 
                 Bulk vehicleInformation = response.body();
 
                 if (response.isSuccessful()) {
-                    tfBatteryValue.setText(vehicleInformation.level + " %");
-                    tfDistanceValue.setText(vehicleInformation.range + " km");
-                    tfTotalDistanceValue.setText(vehicleInformation.odometer + " km");
+                    tvBatteryValue.setText(MessageFormat.format("{0} %", vehicleInformation.level));
+                    tvDistanceValue.setText(MessageFormat.format("{0} km", vehicleInformation.range));
+                    tvTotalDistanceValue.setText(MessageFormat.format("{0} km", vehicleInformation.odometer));
 
                     if (vehicleInformation.charging.equals("Charging"))  {
                         cardViewPercentage.setCardBackgroundColor(getResources().getColor(R.color.batteryStateCharging));
@@ -231,6 +228,26 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
                 swipeRefreshLayout.setRefreshing(false);
             }
         });
+
+        Call<Consumption> consumptionCall = apiInterface.getAvgConsumption("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id, String.valueOf(Calendar.getInstance().get(Calendar.YEAR)), String.valueOf(Calendar.getInstance().get(Calendar.MONTH)));
+        consumptionCall.enqueue(new Callback<Consumption>() {
+            @Override
+            public void onResponse(Call<Consumption> call, Response<Consumption> response) {
+
+                Consumption consumption = response.body();
+
+                if (response.isSuccessful()) {
+                    tvConsumption.setText(MessageFormat.format("{0} kWh", consumption.consumption));
+                } else {
+                    Dialog.showErrorMessage(getActivity(), "Laden des Verbrauches", response.code() + " " + response.message()).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Consumption> call, Throwable t) {
+                Dialog.showErrorMessage(getActivity(), "Laden des Verbrauches", t.getMessage()).show();
+            }
+        });
     }
 
     private  void loadMapData()
@@ -241,7 +258,6 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
             public void onResponse(Call<Location> call, Response<Location> response) {
 
                 if (response.isSuccessful()) {
-
                     googleMap.addMarker(new MarkerOptions().position(new LatLng(response.body().latitude, response.body().longitude)).title("Auto"));
                     CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(response.body().latitude, response.body().longitude), 15);
                     googleMap.animateCamera(cameraUpdate);
