@@ -38,6 +38,8 @@ import de.janl1.betteropelapp.retrofit.TronityApi;
 import de.janl1.betteropelapp.retrofit.objects.Bulk;
 import de.janl1.betteropelapp.retrofit.objects.Consumption;
 import de.janl1.betteropelapp.retrofit.objects.Location;
+import de.janl1.betteropelapp.retrofit.objects.Trip;
+import de.janl1.betteropelapp.retrofit.objects.Trips;
 import de.janl1.betteropelapp.retrofit.objects.Vehicle;
 import de.janl1.betteropelapp.utils.Dialog;
 import de.janl1.betteropelapp.utils.Vars;
@@ -229,22 +231,31 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
             }
         });
 
-        Call<Consumption> consumptionCall = apiInterface.getAvgConsumption("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id, String.valueOf(Calendar.getInstance().get(Calendar.YEAR)), String.valueOf(Calendar.getInstance().get(Calendar.MONTH)));
-        consumptionCall.enqueue(new Callback<Consumption>() {
+        Call<Trips> tripsCall = apiInterface.getTrips("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), "Metric", vehicle.id);
+        tripsCall.enqueue(new Callback<Trips>() {
             @Override
-            public void onResponse(Call<Consumption> call, Response<Consumption> response) {
+            public void onResponse(Call<Trips> call, Response<Trips> response) {
 
-                Consumption consumption = response.body();
+                Trips consumption = response.body();
+
+                double distance = 0;
+                double kwUsed = 0;
+
+                for (Trip trip: consumption.data) {
+                    distance = distance + (trip.distance * 1.609);
+                    kwUsed = kwUsed + trip.usedkWh;
+
+                }
 
                 if (response.isSuccessful()) {
-                    tvConsumption.setText(MessageFormat.format("{0} kWh", consumption.consumption));
+                    tvConsumption.setText(MessageFormat.format("{0} kWh", Math.round(kwUsed / distance * 1000) / 10.0));
                 } else {
                     Dialog.showErrorMessage(getActivity(), "Laden des Verbrauches", response.code() + " " + response.message()).show();
                 }
             }
 
             @Override
-            public void onFailure(Call<Consumption> call, Throwable t) {
+            public void onFailure(Call<Trips> call, Throwable t) {
                 Dialog.showErrorMessage(getActivity(), "Laden des Verbrauches", t.getMessage()).show();
             }
         });

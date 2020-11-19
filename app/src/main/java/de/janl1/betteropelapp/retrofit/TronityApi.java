@@ -8,6 +8,7 @@ import de.janl1.betteropelapp.retrofit.objects.Location;
 import de.janl1.betteropelapp.retrofit.objects.Odometer;
 import de.janl1.betteropelapp.retrofit.objects.Token;
 import de.janl1.betteropelapp.retrofit.objects.TokenRequestDTO;
+import de.janl1.betteropelapp.retrofit.objects.Trips;
 import de.janl1.betteropelapp.retrofit.objects.VehiclesResponseDTO;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -41,4 +42,7 @@ public interface TronityApi {
 
     @GET("/v1/vehicles/{vehicleid}/trips/{year}/{month}/avg")
     Call<Consumption> getAvgConsumption(@Header("Authorization") String token, @Path("vehicleid") String vehicleId, @Path("year") String year, @Path("month") String month);
+
+    @GET("/v1/vehicles/{vehicleid}/trips?limit=1000")
+    Call<Trips> getTrips(@Header("Authorization") String token, @Header("Unit-System") String unit, @Path("vehicleid") String vehicleId);
 }

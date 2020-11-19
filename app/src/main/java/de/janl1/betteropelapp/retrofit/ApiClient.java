@@ -16,7 +16,6 @@ public class ApiClient {
 
         OkHttpClient client = new OkHttpClient.Builder().addInterceptor(interceptor).build();
 
-
         retrofit = new Retrofit.Builder()
                 .baseUrl("https://api.eu.tronity.io")
                 .addConverterFactory(GsonConverterFactory.create())
