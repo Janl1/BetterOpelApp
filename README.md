@@ -1,3 +1,5 @@
+[![Build and Publish](https://github.com/Janl1/BetterOpelApp/workflows/Android%20CI/badge.svg)](https://github.com/Janl1/BetterOpelApp/actions)
+
 # BetterOpelApp
 Die bessere MyOpel App für E-Autos
 
