@@ -112,7 +112,7 @@ public class LoginActivity extends AppCompatActivity {
 
             editor.commit();
 
-            Intent intent = new Intent(this,MainActivity.class);
+            Intent intent = new Intent(this,VehicleActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
             startActivity(intent);
             this.finish();

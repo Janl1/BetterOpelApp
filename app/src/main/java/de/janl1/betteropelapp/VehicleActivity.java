@@ -94,6 +94,14 @@ public class VehicleActivity extends AppCompatActivity {
     {
         String accessToken = prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, "");
         long expiresTimestamp = prefs.getLong(Vars.PREF_AUTH_EXPIRES, 0);
+        boolean appReady = prefs.getBoolean(Vars.PREF_SETUP_COMPLETE, false);
+
+        if (!appReady) {
+            Intent intent = new Intent(this,LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_TASK_ON_HOME);
+            startActivity(intent);
+            this.finish();
+        }
 
         if (accessToken.equals("") || expiresTimestamp == 0) {
             Toast.makeText(getBaseContext(), "Kein Token gefunden! Fordere neuen Token an!", Toast.LENGTH_SHORT).show();
