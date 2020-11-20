@@ -13,3 +13,4 @@
 .externalNativeBuild
 .cxx
 api_keys.xml
+/app/release
