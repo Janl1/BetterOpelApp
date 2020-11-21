@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -27,6 +28,8 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.text.MessageFormat;
@@ -63,6 +66,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
     SwipeRefreshLayout swipeRefreshLayout;
 
     TextView tvBatteryValue;
+    TextView tvBatteryText;
     TextView tvDistanceValue;
     TextView tvTotalDistanceValue;
     TextView tvConsumption;
@@ -76,7 +80,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
     public static VehicleFragment newInstance(Vehicle veh) {
         VehicleFragment fragment = new VehicleFragment();
         Bundle bundle = new Bundle();
-        bundle.putSerializable(ARG_VEHICLE_OBJECT, (Serializable) veh);
+        bundle.putSerializable(ARG_VEHICLE_OBJECT, veh);
         fragment.setArguments(bundle);
         return fragment;
     }
@@ -105,29 +109,18 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
         cardViewPercentage = root.findViewById(R.id.cardViewPercentage);
         swipeRefreshLayout = root.findViewById(R.id.swiperefresh);
         tvConsumption = root.findViewById(R.id.textConsumptionValue);
+        tvBatteryText = root.findViewById(R.id.textAkku);
 
         apiInterface = ApiClient.getClient().create(TronityApi.class);
         prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
 
-        pageViewModel.getmVehicle().observe(getActivity(), new Observer<Vehicle>() {
-            @Override
-            public void onChanged(@Nullable Vehicle veh) {
-                loadBulkData(swipeRefreshLayout);
-            }
-        });
+        pageViewModel.getmVehicle().observe(getActivity(), veh -> loadBulkData(swipeRefreshLayout));
 
-        mapView = (MapView) root.findViewById(R.id.mapView);
+        mapView = root.findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-
-
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                loadBulkData(swipeRefreshLayout);
-            }
-        });
+        swipeRefreshLayout.setOnRefreshListener(() -> loadBulkData(swipeRefreshLayout));
 
         return root;
     }
@@ -190,7 +183,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
         Call<Bulk> bulkCall = apiInterface.getBulkInformation("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
         bulkCall.enqueue(new Callback<Bulk>() {
             @Override
-            public void onResponse(Call<Bulk> call, Response<Bulk> response) {
+            public void onResponse(@NotNull Call<Bulk> call, @NotNull Response<Bulk> response) {
 
                 Bulk vehicleInformation = response.body();
 
@@ -200,7 +193,16 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
                     tvTotalDistanceValue.setText(MessageFormat.format("{0} km", vehicleInformation.odometer));
 
                     if (vehicleInformation.charging.equals("Charging"))  {
-                        cardViewPercentage.setCardBackgroundColor(getResources().getColor(R.color.batteryStateCharging));
+
+
+
+                        cardViewPercentage.setCardBackgroundColor(ContextCompat.getColor(getActivity().getBaseContext(), R.color.batteryStateCharging));
+                        tvBatteryValue.setTextColor(ContextCompat.getColor(getActivity().getBaseContext(), android.R.color.background_light));
+                        tvBatteryText.setTextColor(ContextCompat.getColor(getActivity().getBaseContext(), android.R.color.background_light));
+                    } else {
+                        cardViewPercentage.setCardBackgroundColor(ContextCompat.getColor(getActivity().getBaseContext(), android.R.color.background_light));
+                        tvBatteryValue.setTextColor(ContextCompat.getColor(getActivity().getBaseContext(), android.R.color.secondary_text_light));
+                        tvBatteryText.setTextColor(ContextCompat.getColor(getActivity().getBaseContext(), android.R.color.secondary_text_light));
                     }
 
                     if (googleMapIsReady) {
@@ -225,7 +227,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
             }
 
             @Override
-            public void onFailure(Call<Bulk> call, Throwable t) {
+            public void onFailure(@NotNull Call<Bulk> call, @NotNull Throwable t) {
                 Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", t.getMessage()).show();
                 swipeRefreshLayout.setRefreshing(false);
             }
@@ -234,7 +236,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
         Call<Trips> tripsCall = apiInterface.getTrips("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), "Metric", vehicle.id);
         tripsCall.enqueue(new Callback<Trips>() {
             @Override
-            public void onResponse(Call<Trips> call, Response<Trips> response) {
+            public void onResponse(@NotNull Call<Trips> call, @NotNull Response<Trips> response) {
 
                 Trips consumption = response.body();
 
@@ -255,7 +257,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
             }
 
             @Override
-            public void onFailure(Call<Trips> call, Throwable t) {
+            public void onFailure(@NotNull Call<Trips> call, @NotNull Throwable t) {
                 Dialog.showErrorMessage(getActivity(), "Laden des Verbrauches", t.getMessage()).show();
             }
         });
@@ -266,7 +268,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
         Call<Location> call1 = apiInterface.getLocation("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
         call1.enqueue(new Callback<Location>() {
             @Override
-            public void onResponse(Call<Location> call, Response<Location> response) {
+            public void onResponse(@NotNull Call<Location> call, @NotNull Response<Location> response) {
 
                 if (response.isSuccessful()) {
                     googleMap.addMarker(new MarkerOptions().position(new LatLng(response.body().latitude, response.body().longitude)).title("Auto"));
@@ -279,7 +281,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
             }
 
             @Override
-            public void onFailure(Call<Location> call, Throwable t) {
+            public void onFailure(@NotNull Call<Location> call, @NotNull Throwable t) {
                 Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeugposition", t.getMessage()).show();
             }
         });

@@ -78,16 +78,6 @@ public class VehicleActivity extends AppCompatActivity {
                 Dialog.showErrorMessage(VehicleActivity.this, "Laden der Fahrzeugliste", t.getMessage()).show();
             }
         });
-
-
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
     }
 
     private void checkTokenExistanceAndExpiry()
@@ -110,10 +100,8 @@ public class VehicleActivity extends AppCompatActivity {
 
         long currentTimestamp = new Date().getTime() / 1000L;
         if (currentTimestamp > expiresTimestamp) {
-            Toast.makeText(getBaseContext(), "Token abgelaufen! Fordere neuen Token an!", Toast.LENGTH_SHORT).show();
+            // Toast.makeText(getBaseContext(), "Token abgelaufen! Fordere neuen Token an!", Toast.LENGTH_SHORT).show();
             requestToken();
-        } else {
-            Toast.makeText(getBaseContext(), "Token gültig!", Toast.LENGTH_SHORT).show();
         }
     }
 
