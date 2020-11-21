@@ -9,6 +9,7 @@ import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -36,6 +37,7 @@ import java.text.MessageFormat;
 import java.util.Calendar;
 
 import de.janl1.betteropelapp.R;
+import de.janl1.betteropelapp.listadapters.TripListArrayAdapter;
 import de.janl1.betteropelapp.retrofit.ApiClient;
 import de.janl1.betteropelapp.retrofit.TronityApi;
 import de.janl1.betteropelapp.retrofit.objects.Bulk;
@@ -72,6 +74,8 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
     TextView tvConsumption;
     CardView cardViewPercentage;
 
+    ListView tripsList;
+
     TronityApi apiInterface;
     SharedPreferences prefs;
 
@@ -107,9 +111,10 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
         tvDistanceValue = root.findViewById(R.id.textDistanceValue);
         tvTotalDistanceValue = root.findViewById(R.id.textTotalDistanceValue);
         cardViewPercentage = root.findViewById(R.id.cardViewPercentage);
-        swipeRefreshLayout = root.findViewById(R.id.swiperefresh);
+        //swipeRefreshLayout = root.findViewById(R.id.swiperefresh);
         tvConsumption = root.findViewById(R.id.textConsumptionValue);
         tvBatteryText = root.findViewById(R.id.textAkku);
+        tripsList = root.findViewById(R.id.tripList);
 
         apiInterface = ApiClient.getClient().create(TronityApi.class);
         prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
@@ -120,7 +125,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-        swipeRefreshLayout.setOnRefreshListener(() -> loadBulkData(swipeRefreshLayout));
+        // swipeRefreshLayout.setOnRefreshListener(() -> loadBulkData(swipeRefreshLayout));
 
         return root;
     }
@@ -179,7 +184,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
 
     private void loadBulkData(SwipeRefreshLayout swipeRefreshLayout)
     {
-        swipeRefreshLayout.setRefreshing(true);
+        // swipeRefreshLayout.setRefreshing(true);
         Call<Bulk> bulkCall = apiInterface.getBulkInformation("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
         bulkCall.enqueue(new Callback<Bulk>() {
             @Override
@@ -218,18 +223,18 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
                         }
                     }
 
-                    swipeRefreshLayout.setRefreshing(false);
+                    // swipeRefreshLayout.setRefreshing(false);
 
                 } else {
                     Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", response.code() + " " + response.message()).show();
-                    swipeRefreshLayout.setRefreshing(false);
+                    // swipeRefreshLayout.setRefreshing(false);
                 }
             }
 
             @Override
             public void onFailure(@NotNull Call<Bulk> call, @NotNull Throwable t) {
                 Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", t.getMessage()).show();
-                swipeRefreshLayout.setRefreshing(false);
+                // swipeRefreshLayout.setRefreshing(false);
             }
         });
 
@@ -248,6 +253,12 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
                     kwUsed = kwUsed + trip.usedkWh;
 
                 }
+
+                Trip[] itemsArray = new Trip[consumption.data.size()];
+                itemsArray = consumption.data.toArray(itemsArray);
+
+                TripListArrayAdapter adapter = new TripListArrayAdapter(getActivity(), itemsArray);
+                tripsList.setAdapter(adapter);
 
                 if (response.isSuccessful()) {
                     tvConsumption.setText(MessageFormat.format("{0} kWh", Math.round(kwUsed / distance * 1000) / 10.0));
