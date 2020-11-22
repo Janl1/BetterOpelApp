@@ -2,6 +2,7 @@ package de.janl1.betteropelapp.ui.main;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -10,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -29,6 +31,7 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -66,6 +69,8 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
     GoogleMap googleMap;
 
     SwipeRefreshLayout swipeRefreshLayout;
+    FloatingActionButton refreshFloatingButton;
+    ProgressBar progressBar;
 
     TextView tvBatteryValue;
     TextView tvBatteryText;
@@ -115,6 +120,8 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
         tvConsumption = root.findViewById(R.id.textConsumptionValue);
         tvBatteryText = root.findViewById(R.id.textAkku);
         tripsList = root.findViewById(R.id.tripList);
+        refreshFloatingButton = root.findViewById(R.id.refreshFloatingButton);
+        progressBar = root.findViewById(R.id.progressBar);
 
         apiInterface = ApiClient.getClient().create(TronityApi.class);
         prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
@@ -125,6 +132,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
+        refreshFloatingButton.setOnClickListener(v -> VehicleFragment.this.loadBulkData(swipeRefreshLayout));
         // swipeRefreshLayout.setOnRefreshListener(() -> loadBulkData(swipeRefreshLayout));
 
         return root;
@@ -184,7 +192,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
 
     private void loadBulkData(SwipeRefreshLayout swipeRefreshLayout)
     {
-        // swipeRefreshLayout.setRefreshing(true);
+        showLoadingSpinner();
         Call<Bulk> bulkCall = apiInterface.getBulkInformation("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
         bulkCall.enqueue(new Callback<Bulk>() {
             @Override
@@ -223,18 +231,18 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
                         }
                     }
 
-                    // swipeRefreshLayout.setRefreshing(false);
+                    hideLoadingSpinner();
 
                 } else {
                     Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", response.code() + " " + response.message()).show();
-                    // swipeRefreshLayout.setRefreshing(false);
+                    hideLoadingSpinner();
                 }
             }
 
             @Override
             public void onFailure(@NotNull Call<Bulk> call, @NotNull Throwable t) {
                 Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", t.getMessage()).show();
-                // swipeRefreshLayout.setRefreshing(false);
+                hideLoadingSpinner();
             }
         });
 
@@ -296,5 +304,15 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
                 Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeugposition", t.getMessage()).show();
             }
         });
+    }
+
+    private void showLoadingSpinner()
+    {
+        progressBar.setVisibility(View.VISIBLE);
+    }
+
+    private void hideLoadingSpinner()
+    {
+        progressBar.setVisibility(View.INVISIBLE);
     }
 }
