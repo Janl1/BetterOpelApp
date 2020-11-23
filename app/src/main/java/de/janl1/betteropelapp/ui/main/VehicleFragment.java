@@ -22,7 +22,6 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -68,7 +67,6 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
     MapView mapView;
     GoogleMap googleMap;
 
-    SwipeRefreshLayout swipeRefreshLayout;
     FloatingActionButton refreshFloatingButton;
     ProgressBar progressBar;
 
@@ -124,15 +122,15 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
         progressBar = root.findViewById(R.id.progressBar);
 
         apiInterface = ApiClient.getClient().create(TronityApi.class);
-        prefs = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
+        prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
-        pageViewModel.getmVehicle().observe(getActivity(), veh -> loadBulkData(swipeRefreshLayout));
+        pageViewModel.getmVehicle().observe(getActivity(), veh -> loadBulkData());
 
         mapView = root.findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-        refreshFloatingButton.setOnClickListener(v -> VehicleFragment.this.loadBulkData(swipeRefreshLayout));
+        refreshFloatingButton.setOnClickListener(v -> VehicleFragment.this.loadBulkData());
         // swipeRefreshLayout.setOnRefreshListener(() -> loadBulkData(swipeRefreshLayout));
 
         return root;
@@ -178,7 +176,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(GoogleMap googleMap) {
         googleMapIsReady = true;
 
-        if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Display a helptext before requesting permission!
             getActivity().requestPermissions(new String[] { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION }, PERMISSION_REQUEST_CODE);
         } else {
@@ -190,7 +188,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
         loadMapData();
     }
 
-    private void loadBulkData(SwipeRefreshLayout swipeRefreshLayout)
+    private void loadBulkData()
     {
         showLoadingSpinner();
         Call<Bulk> bulkCall = apiInterface.getBulkInformation("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), vehicle.id);
@@ -200,20 +198,23 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
 
                 Bulk vehicleInformation = response.body();
 
+                if (vehicleInformation == null) {
+                    Dialog.showErrorMessage(getActivity(), "Laden der Fahrzeuginformation", "Die von der Schnittstelle zurückgegebenen Daten sind leer!").show();
+                    hideLoadingSpinner();
+                    return;
+                }
+
                 if (response.isSuccessful()) {
                     tvBatteryValue.setText(MessageFormat.format("{0} %", vehicleInformation.level));
                     tvDistanceValue.setText(MessageFormat.format("{0} km", vehicleInformation.range));
                     tvTotalDistanceValue.setText(MessageFormat.format("{0} km", vehicleInformation.odometer));
 
                     if (vehicleInformation.charging.equals("Charging"))  {
-
-
-
-                        cardViewPercentage.setCardBackgroundColor(ContextCompat.getColor(getActivity().getBaseContext(), R.color.batteryStateCharging));
+                        cardViewPercentage.setCardBackgroundColor(ContextCompat.getColor(getActivity(), R.color.batteryStateCharging));
                         tvBatteryValue.setTextColor(ContextCompat.getColor(getActivity().getBaseContext(), android.R.color.background_light));
                         tvBatteryText.setTextColor(ContextCompat.getColor(getActivity().getBaseContext(), android.R.color.background_light));
                     } else {
-                        cardViewPercentage.setCardBackgroundColor(ContextCompat.getColor(getActivity().getBaseContext(), android.R.color.background_light));
+                        cardViewPercentage.setCardBackgroundColor(ContextCompat.getColor(getActivity(), android.R.color.background_light));
                         tvBatteryValue.setTextColor(ContextCompat.getColor(getActivity().getBaseContext(), android.R.color.secondary_text_light));
                         tvBatteryText.setTextColor(ContextCompat.getColor(getActivity().getBaseContext(), android.R.color.secondary_text_light));
                     }
@@ -234,19 +235,19 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
                     hideLoadingSpinner();
 
                 } else {
-                    Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", response.code() + " " + response.message()).show();
+                    Dialog.showErrorMessage(getActivity(), "Laden der Fahrzeuginformation", response.code() + " " + response.message()).show();
                     hideLoadingSpinner();
                 }
             }
 
             @Override
             public void onFailure(@NotNull Call<Bulk> call, @NotNull Throwable t) {
-                Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeuginformation", t.getMessage()).show();
+                Dialog.showErrorMessage(getActivity(), "Laden der Fahrzeuginformation", t.getMessage()).show();
                 hideLoadingSpinner();
             }
         });
 
-        Call<Trips> tripsCall = apiInterface.getTrips("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), "Metric", vehicle.id);
+        Call<Trips> tripsCall = apiInterface.getTrips("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), "metric", vehicle.id);
         tripsCall.enqueue(new Callback<Trips>() {
             @Override
             public void onResponse(@NotNull Call<Trips> call, @NotNull Response<Trips> response) {
@@ -295,13 +296,13 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
                     googleMap.animateCamera(cameraUpdate);
 
                 } else {
-                    Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeugposition", response.code() + " " + response.message()).show();
+                    Dialog.showErrorMessage(getActivity(), "Laden der Fahrzeugposition", response.code() + " " + response.message()).show();
                 }
             }
 
             @Override
             public void onFailure(@NotNull Call<Location> call, @NotNull Throwable t) {
-                Dialog.showErrorMessage(getActivity().getApplicationContext(), "Laden der Fahrzeugposition", t.getMessage()).show();
+                Dialog.showErrorMessage(getActivity(), "Laden der Fahrzeugposition", t.getMessage()).show();
             }
         });
     }

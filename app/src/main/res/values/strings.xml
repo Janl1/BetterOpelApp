@@ -25,4 +25,18 @@
     <string name="vehicleview_placeholder_distance">-- km</string>
     <string name="vehicleview_placeholder_totaldistance">- km</string>
     <string name="vehicleview_placeholder_consumption">-- kWh</string>
+
+    <string name="triplistview_placeholder_start">--.--.----\n--:--</string>
+    <string name="triplistview_placeholder_end">--.--.----\n--:--</string>
+    <string name="triplistview_placeholder_divider">bis</string>
+
+    <string name="triplistview_placeholder_distance">-- km</string>
+    <string name="triplistview_placeholder_consumption">-- kWh</string>
+    <string name="triplistview_placeholder_temperature">-- *C</string>
+    <string name="triplistview_placeholder_totalconsumption">-- kW</string>
+
+    <string name="triplistview_text_distance">Strecke</string>
+    <string name="triplistview_text_consumption">Ø Verbrauch</string>
+    <string name="triplistview_text_temperature">Ø Temp.</string>
+    <string name="triplistview_text_totalconsumption">Gesamtstrom</string>
 </resources>

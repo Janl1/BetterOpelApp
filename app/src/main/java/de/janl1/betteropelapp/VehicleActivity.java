@@ -17,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -52,12 +53,15 @@ public class VehicleActivity extends AppCompatActivity {
         prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         apiInterface = ApiClient.getClient().create(TronityApi.class);
 
-        checkTokenExistanceAndExpiry();
+        if (!isTokenStillValid()) {
+            requestToken();
+            return;
+        }
 
         Call<VehiclesResponseDTO> call1 = apiInterface.getVehicles("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""));
         call1.enqueue(new Callback<VehiclesResponseDTO>() {
             @Override
-            public void onResponse(Call<VehiclesResponseDTO> call, Response<VehiclesResponseDTO> response) {
+            public void onResponse(@NotNull Call<VehiclesResponseDTO> call, @NotNull Response<VehiclesResponseDTO> response) {
 
                 if (response.isSuccessful()) {
 
@@ -74,13 +78,13 @@ public class VehicleActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<VehiclesResponseDTO> call, Throwable t) {
+            public void onFailure(@NotNull Call<VehiclesResponseDTO> call, @NotNull Throwable t) {
                 Dialog.showErrorMessage(VehicleActivity.this, "Laden der Fahrzeugliste", t.getMessage()).show();
             }
         });
     }
 
-    private void checkTokenExistanceAndExpiry()
+    private boolean isTokenStillValid()
     {
         String accessToken = prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, "");
         long expiresTimestamp = prefs.getLong(Vars.PREF_AUTH_EXPIRES, 0);
@@ -95,14 +99,11 @@ public class VehicleActivity extends AppCompatActivity {
 
         if (accessToken.equals("") || expiresTimestamp == 0) {
             Toast.makeText(getBaseContext(), "Kein Token gefunden! Fordere neuen Token an!", Toast.LENGTH_SHORT).show();
-            requestToken();
+            return false;
         }
 
         long currentTimestamp = new Date().getTime() / 1000L;
-        if (currentTimestamp > expiresTimestamp) {
-            // Toast.makeText(getBaseContext(), "Token abgelaufen! Fordere neuen Token an!", Toast.LENGTH_SHORT).show();
-            requestToken();
-        }
+        return currentTimestamp <= expiresTimestamp;
     }
 
     private void requestToken()
@@ -117,13 +118,16 @@ public class VehicleActivity extends AppCompatActivity {
             Call<Token> call1 = apiInterface.auth(tokenRequestDTO);
             call1.enqueue(new Callback<Token>() {
                 @Override
-                public void onResponse(Call<Token> call, Response<Token> response) {
-
-                    System.out.println("Request ist gelaufen!");
+                public void onResponse(@NotNull Call<Token> call, @NotNull Response<Token> response) {
 
                     if (response.isSuccessful()) {
                         try {
                             Token token = response.body();
+
+                            if (token == null) {
+                                Dialog.showErrorMessage(VehicleActivity.this, "Parsen des Tokens", "Die von der Schnittstelle zurückgegebenen Daten sind leer!").show();
+                                return;
+                            }
 
                             editor = prefs.edit();
                             editor.putString(Vars.PREF_AUTH_ACCESSTOKEN, token.access_token);
@@ -158,7 +162,7 @@ public class VehicleActivity extends AppCompatActivity {
                 }
 
                 @Override
-                public void onFailure(Call<Token> call, Throwable t) {
+                public void onFailure(@NotNull Call<Token> call, @NotNull Throwable t) {
                     Dialog.showErrorMessage(VehicleActivity.this, "Authentifizierung", t.getMessage()).show();
                 }
             });
