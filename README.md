@@ -16,4 +16,4 @@ Die App bezieht die Opel Fahrzeugdaten von [Tronity.io](https://tronity.io/home/
 
 ## Screenshots
 
-![alt text](https://file.lahmer.eu/VehicleView.jpg)
+![alt text](https://file.lahmer.eu/Showcase.png)
