@@ -276,10 +276,15 @@
 
                 <ListView
                     android:id="@+id/tripList"
+                    style="@style/Widget.AppCompat.ListView.Menu"
                     android:layout_width="0dp"
                     android:layout_height="0dp"
                     android:layout_marginTop="5dp"
                     android:layout_marginBottom="5dp"
+                    android:dividerHeight="2dp"
+                    android:fadingEdge="horizontal|vertical"
+                    android:footerDividersEnabled="true"
+                    android:headerDividersEnabled="true"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"

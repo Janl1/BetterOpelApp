@@ -75,7 +75,7 @@ public class TripListArrayAdapter extends ArrayAdapter<Trip> {
     }
 
     private String dateParsed(Date date) {
-        SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyy\nH:m", Locale.GERMANY);
+        SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyy\nHH:mm", Locale.GERMANY);
         String format = formatter.format(date);
         return format + " Uhr";
     }
