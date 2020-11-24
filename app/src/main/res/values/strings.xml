@@ -19,7 +19,7 @@
     <string name="vehicleview_text_battery">Akkustand</string>
     <string name="vehicleview_text_distance">Reichweite</string>
     <string name="vehicleview_text_totaldistance">Kilometer</string>
-    <string name="vehicleview_text_consumption">Verbrauch pro 100km</string>
+    <string name="vehicleview_text_consumption">Verbrauch/100km</string>
 
     <string name="vehicleview_placeholder_battery">-- %</string>
     <string name="vehicleview_placeholder_distance">-- km</string>
