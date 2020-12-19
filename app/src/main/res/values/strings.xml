@@ -26,6 +26,20 @@
     <string name="vehicleview_placeholder_totaldistance">- km</string>
     <string name="vehicleview_placeholder_consumption">-- kWh</string>
 
+    <string name="chargelistview_placeholder_start">--.--.----\n--:--</string>
+    <string name="chargelistview_placeholder_end">--.--.----\n--:--</string>
+    <string name="chargelistview_placeholder_divider">bis</string>
+
+    <string name="chargelistview_placeholder_time">--:--</string>
+    <string name="chargelistview_placeholder_energy">-- kWh</string>
+    <string name="chargelistview_placeholder_distance">-- km</string>
+    <string name="chargelistview_placeholder_max">-- kW</string>
+
+    <string name="chargelistview_text_time">Dauer</string>
+    <string name="chargelistview_text_energy">Geladen</string>
+    <string name="chargelistview_text_distance">Reichweite</string>
+    <string name="chargelistview_text_max">Max</string>
+
     <string name="triplistview_placeholder_start">--.--.----\n--:--</string>
     <string name="triplistview_placeholder_end">--.--.----\n--:--</string>
     <string name="triplistview_placeholder_divider">bis</string>
@@ -39,4 +53,8 @@
     <string name="triplistview_text_consumption">Ø Verbrauch</string>
     <string name="triplistview_text_temperature">Ø Temp.</string>
     <string name="triplistview_text_totalconsumption">Gesamtstrom</string>
+
+    <string name="listview_header_trips">Aktuelle Fahrten</string>
+    <string name="listview_header_charges">Aktuelle Ladevorgänge</string>
+
 </resources>

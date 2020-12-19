@@ -2,7 +2,8 @@ package de.janl1.betteropelapp.retrofit;
 
 import de.janl1.betteropelapp.retrofit.objects.Battery;
 import de.janl1.betteropelapp.retrofit.objects.Bulk;
-import de.janl1.betteropelapp.retrofit.objects.Charge;
+import de.janl1.betteropelapp.retrofit.objects.ChargeStatus;
+import de.janl1.betteropelapp.retrofit.objects.Charges;
 import de.janl1.betteropelapp.retrofit.objects.Consumption;
 import de.janl1.betteropelapp.retrofit.objects.Location;
 import de.janl1.betteropelapp.retrofit.objects.Odometer;
@@ -35,7 +36,7 @@ public interface TronityApi {
     Call<Odometer> getOdometer(@Header("Authorization") String token, @Path("vehicleid") String vehicleId);
 
     @GET("/v1/vehicles/{vehicleid}/charge")
-    Call<Charge> getChargingSate(@Header("Authorization") String token, @Path("vehicleid") String vehicleId);
+    Call<ChargeStatus> getChargingSate(@Header("Authorization") String token, @Path("vehicleid") String vehicleId);
 
     @GET("/v1/vehicles/{vehicleid}/bulk")
     Call<Bulk> getBulkInformation(@Header("Authorization") String token, @Path("vehicleid") String vehicleId);
@@ -45,4 +46,7 @@ public interface TronityApi {
 
     @GET("/v1/vehicles/{vehicleid}/trips?limit=1000")
     Call<Trips> getTrips(@Header("Authorization") String token, @Header("Unit-System") String unit, @Path("vehicleid") String vehicleId);
+
+    @GET("/v1/vehicles/{vehicleid}/charges?limit=1000")
+    Call<Charges> getCharges(@Header("Authorization") String token, @Header("Unit-System") String unit, @Path("vehicleid") String vehicleId);
 }

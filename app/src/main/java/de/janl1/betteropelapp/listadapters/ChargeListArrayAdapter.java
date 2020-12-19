@@ -10,15 +10,16 @@ import android.widget.TextView;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import de.janl1.betteropelapp.R;
-import de.janl1.betteropelapp.retrofit.objects.Trip;
+import de.janl1.betteropelapp.retrofit.objects.Charge;
 
-public class TripListArrayAdapter extends ArrayAdapter<Trip> {
+public class ChargeListArrayAdapter extends ArrayAdapter<Charge> {
     private final Context context;
-    private final Trip[] values;
+    private final Charge[] values;
 
-    public TripListArrayAdapter(Context context, Trip[] values) {
+    public ChargeListArrayAdapter(Context context, Charge[] values) {
         super(context, -1, values);
         this.context = context;
         this.values = values;
@@ -32,15 +33,15 @@ public class TripListArrayAdapter extends ArrayAdapter<Trip> {
 
         if (convertView == null) {
 
-            convertView = inflater.inflate(R.layout.list_trips, (ViewGroup) parent.getTag());
+            convertView = inflater.inflate(R.layout.list_charges, (ViewGroup) parent.getTag());
             holder = new ViewHolder();
 
             holder.startDate = convertView.findViewById(R.id.startDate);
             holder.stopDate = convertView.findViewById(R.id.stopDate);
-            holder.distance = convertView.findViewById(R.id.timeValue);
-            holder.consumption = convertView.findViewById(R.id.distanceValue);
-            holder.consumptionTotal = convertView.findViewById(R.id.maxValue);
-            holder.temperature = convertView.findViewById(R.id.energyValue);
+            holder.distance = convertView.findViewById(R.id.distanceValue);
+            holder.energy = convertView.findViewById(R.id.energyValue);
+            holder.max = convertView.findViewById(R.id.maxValue);
+            holder.time = convertView.findViewById(R.id.timeValue);
 
             convertView.setTag(holder);
 
@@ -49,22 +50,23 @@ public class TripListArrayAdapter extends ArrayAdapter<Trip> {
         }
 
 
-        Trip trip = values[position];
+        Charge charge = values[position];
 
-        Date start = new Date((long)trip.startTime);
-        Date end = new Date((long)trip.endTime);
+        Date start = new Date((long)charge.startTime);
+        Date end = new Date((long)charge.endTime);
 
-        double consumptionValue = round(trip.usedkWh / (trip.distance * 1.609) * 100, 2);
-        if (consumptionValue < 0) {
-            consumptionValue = 0;
-        }
+        long time = (long)charge.endTime - (long)charge.startTime;
+        time = time / 1000;
+
+
+        String timeCharging = String.format(Locale.GERMAN, "%02d:%02d:%02d", time / 3600, (time % 3600) / 60, time % 60);
 
         holder.startDate.setText(dateParsed(start));
         holder.stopDate.setText(dateParsed(end));
-        holder.distance.setText(String.format("%s km", Math.round(trip.distance * 1.609)));
-        holder.consumption.setText(String.format("%s kWh", consumptionValue));
-        holder.consumptionTotal.setText(String.format("%s kWh", round(trip.usedkWh, 2)));
-        holder.temperature.setText(String.format("%s *C", trip.avgTemp));
+        holder.distance.setText(String.format("%s km", round(charge.range * 1.609, 2)));
+        holder.energy.setText(String.format("%s kWh", charge.kWh));
+        holder.max.setText(String.format("%s kW", round(charge.max, 2)));
+        holder.time.setText(timeCharging);
 
         return convertView;
     }
@@ -88,8 +90,8 @@ public class TripListArrayAdapter extends ArrayAdapter<Trip> {
         private TextView startDate;
         private TextView stopDate;
         private TextView distance;
-        private TextView consumption;
-        private TextView consumptionTotal;
-        private TextView temperature;
+        private TextView energy;
+        private TextView max;
+        private TextView time;
     }
 }

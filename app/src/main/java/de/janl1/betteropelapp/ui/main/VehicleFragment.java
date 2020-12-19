@@ -2,7 +2,6 @@ package de.janl1.betteropelapp.ui.main;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.ProgressDialog;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -14,13 +13,11 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -34,16 +31,16 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.Serializable;
 import java.text.MessageFormat;
-import java.util.Calendar;
 
 import de.janl1.betteropelapp.R;
+import de.janl1.betteropelapp.listadapters.ChargeListArrayAdapter;
 import de.janl1.betteropelapp.listadapters.TripListArrayAdapter;
 import de.janl1.betteropelapp.retrofit.ApiClient;
 import de.janl1.betteropelapp.retrofit.TronityApi;
 import de.janl1.betteropelapp.retrofit.objects.Bulk;
-import de.janl1.betteropelapp.retrofit.objects.Consumption;
+import de.janl1.betteropelapp.retrofit.objects.Charge;
+import de.janl1.betteropelapp.retrofit.objects.Charges;
 import de.janl1.betteropelapp.retrofit.objects.Location;
 import de.janl1.betteropelapp.retrofit.objects.Trip;
 import de.janl1.betteropelapp.retrofit.objects.Trips;
@@ -75,9 +72,10 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
     TextView tvDistanceValue;
     TextView tvTotalDistanceValue;
     TextView tvConsumption;
+    TextView tvListViewHeader;
     CardView cardViewPercentage;
 
-    ListView tripsList;
+    ListView list;
 
     TronityApi apiInterface;
     SharedPreferences prefs;
@@ -110,6 +108,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
             Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_vehicle, container, false);
 
+        tvListViewHeader = root.findViewById(R.id.listViewHeader);
         tvBatteryValue = root.findViewById(R.id.textAkkuValue);
         tvDistanceValue = root.findViewById(R.id.textDistanceValue);
         tvTotalDistanceValue = root.findViewById(R.id.textTotalDistanceValue);
@@ -117,7 +116,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
         //swipeRefreshLayout = root.findViewById(R.id.swiperefresh);
         tvConsumption = root.findViewById(R.id.textConsumptionValue);
         tvBatteryText = root.findViewById(R.id.textAkku);
-        tripsList = root.findViewById(R.id.tripList);
+        list = root.findViewById(R.id.list);
         refreshFloatingButton = root.findViewById(R.id.refreshFloatingButton);
         progressBar = root.findViewById(R.id.progressBar);
 
@@ -132,6 +131,10 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
 
         refreshFloatingButton.setOnClickListener(v -> VehicleFragment.this.loadBulkData());
         // swipeRefreshLayout.setOnRefreshListener(() -> loadBulkData(swipeRefreshLayout));
+
+        tvTotalDistanceValue.setOnClickListener(v -> loadTripsList(v));
+
+        tvBatteryValue.setOnClickListener(v -> loadCharges(v));
 
         return root;
     }
@@ -247,40 +250,7 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
             }
         });
 
-        Call<Trips> tripsCall = apiInterface.getTrips("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), "metric", vehicle.id);
-        tripsCall.enqueue(new Callback<Trips>() {
-            @Override
-            public void onResponse(@NotNull Call<Trips> call, @NotNull Response<Trips> response) {
-
-                Trips consumption = response.body();
-
-                double distance = 0;
-                double kwUsed = 0;
-
-                for (Trip trip: consumption.data) {
-                    distance = distance + (trip.distance * 1.609);
-                    kwUsed = kwUsed + trip.usedkWh;
-
-                }
-
-                Trip[] itemsArray = new Trip[consumption.data.size()];
-                itemsArray = consumption.data.toArray(itemsArray);
-
-                TripListArrayAdapter adapter = new TripListArrayAdapter(getActivity(), itemsArray);
-                tripsList.setAdapter(adapter);
-
-                if (response.isSuccessful()) {
-                    tvConsumption.setText(MessageFormat.format("{0} kWh", Math.round(kwUsed / distance * 1000) / 10.0));
-                } else {
-                    Dialog.showErrorMessage(getActivity(), "Laden des Verbrauches", response.code() + " " + response.message()).show();
-                }
-            }
-
-            @Override
-            public void onFailure(@NotNull Call<Trips> call, @NotNull Throwable t) {
-                Dialog.showErrorMessage(getActivity(), "Laden des Verbrauches", t.getMessage()).show();
-            }
-        });
+        loadTripsList(getView());
     }
 
     private  void loadMapData()
@@ -303,6 +273,75 @@ public class VehicleFragment extends Fragment implements OnMapReadyCallback {
             @Override
             public void onFailure(@NotNull Call<Location> call, @NotNull Throwable t) {
                 Dialog.showErrorMessage(getActivity(), "Laden der Fahrzeugposition", t.getMessage()).show();
+            }
+        });
+    }
+
+    public void loadTripsList(View view)
+    {
+        tvListViewHeader.setText(R.string.listview_header_trips);
+        Call<Trips> tripsCall = apiInterface.getTrips("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), "metric", vehicle.id);
+        tripsCall.enqueue(new Callback<Trips>() {
+            @Override
+            public void onResponse(@NotNull Call<Trips> call, @NotNull Response<Trips> response) {
+
+                Trips consumption = response.body();
+
+                double distance = 0;
+                double kwUsed = 0;
+
+                for (Trip trip: consumption.data) {
+                    distance = distance + (trip.distance * 1.609);
+                    kwUsed = kwUsed + trip.usedkWh;
+
+                }
+
+                Trip[] itemsArray = new Trip[consumption.data.size()];
+                itemsArray = consumption.data.toArray(itemsArray);
+
+                TripListArrayAdapter adapter = new TripListArrayAdapter(getActivity(), itemsArray);
+                list.setAdapter(adapter);
+
+                if (response.isSuccessful()) {
+                    tvConsumption.setText(MessageFormat.format("{0} kWh", Math.round(kwUsed / distance * 1000) / 10.0));
+                } else {
+                    Dialog.showErrorMessage(getActivity(), "Laden des Verbrauches", response.code() + " " + response.message()).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NotNull Call<Trips> call, @NotNull Throwable t) {
+                Dialog.showErrorMessage(getActivity(), "Laden des Verbrauches", t.getMessage()).show();
+            }
+        });
+    }
+
+    public void loadCharges(View view)
+    {
+        tvListViewHeader.setText(R.string.listview_header_charges);
+        Call<Charges> chargesCall = apiInterface.getCharges("Bearer " + prefs.getString(Vars.PREF_AUTH_ACCESSTOKEN, ""), "metric", vehicle.id);
+        chargesCall.enqueue(new Callback<Charges>() {
+            @Override
+            public void onResponse(@NotNull Call<Charges> call, @NotNull Response<Charges> response) {
+
+                if (response.isSuccessful()) {
+
+                    Charges charges = response.body();
+
+                    Charge[] itemsArray = new Charge[charges.data.size()];
+                    itemsArray = charges.data.toArray(itemsArray);
+
+                    ChargeListArrayAdapter adapter = new ChargeListArrayAdapter(getActivity(), itemsArray);
+                    list.setAdapter(adapter);
+
+                } else {
+                    Dialog.showErrorMessage(getActivity(), "Laden der Ladevorgänge", response.code() + " " + response.message()).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NotNull Call<Charges> call, @NotNull Throwable t) {
+                Dialog.showErrorMessage(getActivity(), "Laden des Verbrauches", t.getMessage()).show();
             }
         });
     }
